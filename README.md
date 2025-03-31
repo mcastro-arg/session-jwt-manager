@@ -1,69 +1,141 @@
-# Welcome to your Lovable project
 
-## Project info
+# Session JWT Manager
 
-**URL**: https://lovable.dev/projects/2f2dd14a-cdce-47a4-99cd-213142829fc1
+Este proyecto implementa un gestor de sesiones JWT con Express y Redis que:
 
-## How can I edit this code?
+- Recibe una key por POST HTTPS
+- Se comunica con una API externa para obtener un token JWT
+- Obtiene configuraciones de estilo desde la API
+- Crea una sesión y la persiste en Redis
+- Devuelve un identificador de sesión con 1 hora de expiración
+- Valida el identificador en cada solicitud
 
-There are several ways of editing your application.
+## Estructura del proyecto
 
-**Use Lovable**
+- `server/`: Contiene la implementación del servidor Express
+- `src/`: Contiene la interfaz de usuario React para probar la funcionalidad
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/2f2dd14a-cdce-47a4-99cd-213142829fc1) and start prompting.
+## Requisitos
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js v14+
+- Redis (para desarrollo local)
+- Docker y Docker Compose (opcional, para despliegue)
 
-**Use your preferred IDE**
+## Configuración
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+1. Clona este repositorio
+2. Configura las variables de entorno:
+   ```
+   cd server
+   cp .env.example .env
+   ```
+3. Edita el archivo `.env` con tus configuraciones
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## Ejecución en desarrollo
 
-Follow these steps:
+### Servidor Express:
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+```bash
+cd server
+npm install
+npm start
+```
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### Cliente React:
 
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+```bash
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Ejecución con Docker
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```bash
+cd server
+docker-compose up -d
+```
 
-**Use GitHub Codespaces**
+## Endpoints API
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Crear Sesión
 
-## What technologies are used for this project?
+```
+POST /api/session
+Content-Type: application/json
 
-This project is built with .
+{
+  "apiKey": "tu-api-key"
+}
+```
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Respuesta:
 
-## How can I deploy this project?
+```json
+{
+  "success": true,
+  "sessionId": "uuid-session-id",
+  "expiresAt": "2023-01-01T00:00:00.000Z",
+  "message": "Session created successfully"
+}
+```
 
-Simply open [Lovable](https://lovable.dev/projects/2f2dd14a-cdce-47a4-99cd-213142829fc1) and click on Share -> Publish.
+### Validar Sesión
 
-## I want to use a custom domain - is that possible?
+```
+POST /api/validate
+Content-Type: application/json
 
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+{
+  "sessionId": "uuid-session-id"
+}
+```
+
+Respuesta:
+
+```json
+{
+  "success": true,
+  "valid": true,
+  "sessionData": {
+    "styleConfig": {
+      "theme": "light",
+      "primaryColor": "#1a73e8"
+    },
+    "expiresAt": "2023-01-01T00:00:00.000Z"
+  },
+  "message": "Session is valid"
+}
+```
+
+### Ruta Protegida
+
+```
+GET /api/protected
+X-Session-Id: uuid-session-id
+```
+
+Respuesta:
+
+```json
+{
+  "success": true,
+  "message": "You have access to protected resource",
+  "user": {
+    "jwt": "eyJhbGci...",
+    "styleConfig": {
+      "theme": "light",
+      "primaryColor": "#1a73e8"
+    }
+  }
+}
+```
+
+## Seguridad
+
+- Las sesiones expiran automáticamente después de 1 hora
+- El token JWT nunca se devuelve al cliente en las validaciones
+- Se implementa validación de sesiones en cada solicitud a endpoints protegidos
+
+## URL del proyecto Lovable
+
+**URL**: https://lovable.dev/projects/2f2dd14a-cdce-47a4-99cd-213142829fc1
